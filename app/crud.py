@@ -1,7 +1,7 @@
 from models import ORM_CLS, ORM_OBJ
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException
@@ -13,34 +13,39 @@ async def get_ad_by_id( session: AsyncSession, orm_cls: ORM_CLS, ad_id: int ) ->
         raise HTTPException( 404, "Advertisement not found" )
     return orm_obj
 
-
-# async def search_ad( session: AsyncSession, orm_cls: ORM_CLS, **queryargs):
-#     sel = select(orm_cls)
-#     query = sel.filter_by(**queryargs)
-
-#     result = await session.execute(query)
-#     return result
-async def search_ad( session: AsyncSession, orm_cls: ORM_CLS, search: dict | None = None ):
+async def search_ad( session: AsyncSession, orm_cls: ORM_CLS, queryparams: dict | None = None) -> list[ORM_OBJ]:
     query = select(orm_cls)
+    limit: int = 100
+    offset: int = 0
 
-    for key, value in search:
+    if queryparams:
+        conditions = []
+        if "title" in queryparams:
+            conditions.append( orm_cls.title.ilike( f"%{ queryparams['title'] }" ) )
+        if "description" in queryparams:
+            conditions.append( orm_cls.description.ilike( f"%{ queryparams['description'] }" ) )
+        if "author" in queryparams:
+            conditions.append( orm_cls.author.ilike( f"%{ queryparams['author'] }" ) )
+        if "price" in queryparams:
+            conditions.append( orm_cls.price == queryparams['price'] )
+        if "limit" in queryparams:
+            limit = queryparams['limit']
+        if "offset" in queryparams:
+            limit = queryparams['offset']
 
-        query = query.filter(
-            (orm_cls.title.ilike(f"%{value}%")) | 
-            (orm_cls.descr.ilike(f"%{value}%")) | 
-            (orm_cls.author.ilike(f"%{value}%"))
-        )
+        if conditions:
+            query = query.where( and_( *conditions ) ).limit(limit).offset(offset)
 
     result = await session.execute(query)
     return result.scalars().all()
 
 async def create_ad( session: AsyncSession, ad_item: ORM_OBJ ):
-    try:
+    # try:
         session.add( ad_item )
         await session.commit()
         return ad_item
-    except IntegrityError:
-        raise HTTPException( 409, "Advertisement already exist" )
+    # except IntegrityError:
+        # raise HTTPException( 409, "Advertisement already exist" )
 
 async def update_ad( session: AsyncSession, orm_cls: ORM_CLS, ad_id: int, updated_item: dict ):
     ad = await session.get( orm_cls, ad_id )

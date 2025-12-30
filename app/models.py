@@ -4,13 +4,13 @@ import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-from sqlalchemy import Integer, String, DateTime, func
+from sqlalchemy import Integer, Float, String, DateTime, func
 
-POSTGRES_DB = os.getenv( "POSTGRES_DB", "pyhomework1" )
-POSTGRES_USER = os.getenv( "POSTGRES_USER", "pythonpguser" )
-POSTGRES_PASSWORD = os.getenv( "POSTGRES_PASSWORD", "Based1337" )
-POSTGRES_HOST = os.getenv( "POSTGRES_HOST", "localhost" )
-POSTGRES_PORT = os.getenv( "POSTGRES_PORT", "5432" )
+POSTGRES_DB = os.getenv( "POSTGRES_DB" )
+POSTGRES_USER = os.getenv( "POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv( "POSTGRES_PASSWORD" )
+POSTGRES_HOST = os.getenv( "POSTGRES_HOST" )
+POSTGRES_PORT = os.getenv( "POSTGRES_PORT" )
 
 PG_DSN = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
@@ -28,8 +28,8 @@ class AdsBase( Base ):
     id: Mapped[int] = mapped_column( Integer, primary_key=True )
     created_at: Mapped[datetime.datetime] = mapped_column( DateTime( timezone=True ), server_default=func.now() )
     title: Mapped[str] = mapped_column( String )
-    descr: Mapped[str] = mapped_column( String )
-    price: Mapped[int] = mapped_column( Integer )
+    description: Mapped[str] = mapped_column( String )
+    price: Mapped[float] = mapped_column( Float )
     author: Mapped[str] = mapped_column( String )
 
     def dict(self):
@@ -37,7 +37,7 @@ class AdsBase( Base ):
             "id": self.id,
             "created_at": self.created_at.isoformat(),
             "title": self.title,
-            "descr": self.descr,
+            "description": self.description,
             "price": self.price,
             "author": self.author,
             }
